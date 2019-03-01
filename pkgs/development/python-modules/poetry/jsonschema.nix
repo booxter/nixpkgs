@@ -9,11 +9,11 @@
 
 buildPythonPackage rec {
   pname = "jsonschema";
-  version = "3.0.0a3";
+  version = "3.0.0";
 
   src = fetchPypi {
     inherit pname version;
-    sha256 = "0pkhsq91rhk6384p0jxjkhc9yml2ya2l0mysyq78sb4981h45n6z";
+    sha256 = "acc8a90c31d11060516cfd0b414b9f8bcf4bc691b21f0f786ea57dd5255c79db";
   };
 
   nativeBuildInputs = [ setuptools_scm ];
