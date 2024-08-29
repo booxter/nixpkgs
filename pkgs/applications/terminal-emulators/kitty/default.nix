@@ -103,6 +103,9 @@ buildPythonApplication rec {
     # Skip `test_ssh_bootstrap_with_different_launchers` when launcher is `zsh` since it causes:
     # OSError: master_fd is in error condition
     ./disable-test_ssh_bootstrap_with_different_launchers.patch
+
+    # Fix test failures due to using global zsh config in build env
+    ./0001-Set-IN_NIX_SHELL-1-for-tests.patch
   ];
 
   hardeningDisable = [
