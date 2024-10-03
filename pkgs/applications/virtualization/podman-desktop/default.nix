@@ -82,18 +82,16 @@ stdenv.mkDerivation (finalAttrs: {
 
     yarn --offline run build
 
+    cp -r ${electron.dist} electron-dist
+    chmod -R u+w electron-dist
   '' + lib.optionalString stdenv.hostPlatform.isDarwin ''
-    # ugly hack; electron-builder fails when some files under Electron.app are read-only
-    cp -R ${electron.dist}/Electron.app .
-    chmod -R u+w Electron.app
-
     # Disable code signing during build on macOS.
     export CSC_IDENTITY_AUTO_DISCOVERY=false
     sed -i "/afterSign/d" .electron-builder.config.cjs
   '' + ''
     yarn --offline run electron-builder --dir \
       --config .electron-builder.config.cjs \
-      -c.electronDist=${if stdenv.hostPlatform.isDarwin then "." else electron.dist} \
+      -c.electronDist=electron-dist \
       -c.electronVersion=${electron.version}
 
     runHook postBuild
@@ -105,7 +103,7 @@ stdenv.mkDerivation (finalAttrs: {
     mkdir -p "$out/share/lib/podman-desktop"
   '' + lib.optionalString stdenv.hostPlatform.isDarwin ''
     mkdir -p $out/{Applications,bin}
-    mv dist/mac-*/Podman\ Desktop.app $out/Applications
+    mv dist/mac*/Podman\ Desktop.app $out/Applications
     ln -s $out/Applications/Podman\ Desktop.app/Contents/Resources "$out/share/lib/podman-desktop/resources"
 
     makeWrapper "$out/Applications/Podman Desktop.app/Contents/MacOS/Podman Desktop" $out/bin/podman-desktop
