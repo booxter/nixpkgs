@@ -92,9 +92,6 @@ stdenv.mkDerivation rec {
     license = with licenses; [ gpl2Plus lgpl21Plus ];
     description = "RPM Package Manager";
     maintainers = with maintainers; [ copumpkin ];
-    platforms = platforms.linux;
-    # Support for darwin was removed in https://github.com/NixOS/nixpkgs/pull/196350.
-    # This can be re-enables for apple_sdk.version >= 13.0.
-    badPlatforms = platforms.darwin;
+    platforms = with platforms; linux ++ darwin;
   };
 }
