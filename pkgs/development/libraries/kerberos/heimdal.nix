@@ -23,6 +23,7 @@
 , CoreFoundation
 , Security
 , SystemConfiguration
+, darwin
 
 , curl
 , jdk_headless
@@ -66,9 +67,10 @@ stdenv.mkDerivation {
     perl
     bison
     flex
+    perlPackages.JSON
     texinfo
   ]
-  ++ (with perlPackages; [ JSON ]);
+  ++ lib.optionals (stdenv.hostPlatform.isDarwin) [ darwin.libresolv ];
 
   buildInputs = [ db libedit pam ]
     ++ lib.optionals (stdenv.hostPlatform.isDarwin) [ CoreFoundation Security SystemConfiguration ]
@@ -78,6 +80,8 @@ stdenv.mkDerivation {
     ++ lib.optionals (withOpenLDAP) [ openldap ]
     ++ lib.optionals (withOpenSSL) [ openssl ]
     ++ lib.optionals (withSQLite3) [ sqlite ];
+
+  NIX_LDFLAGS = lib.optionalString stdenv.hostPlatform.isDarwin "-lresolv";
 
   doCheck = true;
   nativeCheckInputs = [
@@ -107,6 +111,13 @@ stdenv.mkDerivation {
     "--enable-hdb-openldap-module"
   ] ++ lib.optionals (withSQLite3) [
     "--with-sqlite3=${sqlite.dev}"
+  ];
+
+  patches = [
+    # Proposed @ https://github.com/heimdal/heimdal/pull/1262
+    ./0001-Include-db.h-for-nbdb-compat-mode.patch
+    # Proposed @ https://github.com/heimdal/heimdal/pull/1264
+    ./0001-Define-HAVE_DB_185_H.patch
   ];
 
   # (check-ldap) slapd resides within ${openldap}/libexec,
