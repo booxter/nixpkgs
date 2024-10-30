@@ -1353,6 +1353,8 @@ self: super: with self; {
 
   azure-storage-file = callPackage ../development/python-modules/azure-storage-file { };
 
+  azure-storage-file-datalake = callPackage ../development/python-modules/azure-storage-file-datalake { };
+
   azure-storage-file-share = callPackage ../development/python-modules/azure-storage-file-share { };
 
   azure-storage-nspkg = callPackage ../development/python-modules/azure-storage-nspkg { };
@@ -4321,7 +4323,9 @@ self: super: with self; {
 
   faker = callPackage ../development/python-modules/faker { };
 
-  fakeredis = callPackage ../development/python-modules/fakeredis { };
+  fakeredis = callPackage ../development/python-modules/fakeredis {
+    redis-server = pkgs.redis;
+  };
 
   falcon = callPackage ../development/python-modules/falcon { };
 
@@ -4918,8 +4922,6 @@ self: super: with self; {
   gb-io = callPackage ../development/python-modules/gb-io { };
 
   gbinder-python = callPackage ../development/python-modules/gbinder-python { };
-
-  gbulb = callPackage ../development/python-modules/gbulb { };
 
   gcal-sync = callPackage ../development/python-modules/gcal-sync { };
 
@@ -7944,6 +7946,8 @@ self: super: with self; {
 
   microsoft-kiota-serialization-text = callPackage ../development/python-modules/microsoft-kiota-serialization-text { };
 
+  microsoft-security-utilities-secret-masker = callPackage ../development/python-modules/microsoft-security-utilities-secret-masker { };
+
   midea-beautiful-air = callPackage ../development/python-modules/midea-beautiful-air { };
 
   midiutil = callPackage ../development/python-modules/midiutil { };
@@ -8784,6 +8788,8 @@ self: super: with self; {
   nanoleaf = callPackage ../development/python-modules/nanoleaf { };
 
   navec = callPackage ../development/python-modules/navec { };
+
+  narwhals = callPackage ../development/python-modules/narwhals { };
 
   natasha = callPackage ../development/python-modules/natasha { };
 
@@ -10184,6 +10190,10 @@ self: super: with self; {
 
   ppk2-api = callPackage ../development/python-modules/ppk2-api { };
 
+  primp = callPackage ../development/python-modules/primp {
+    inherit (pkgs.darwin.apple_sdk.frameworks) SystemConfiguration;
+  };
+
   print-color = callPackage ../development/python-modules/print-color { };
 
   private-gpt = callPackage ../development/python-modules/private-gpt { };
@@ -10349,10 +10359,6 @@ self: super: with self; {
   pyre-extensions = callPackage ../development/python-modules/pyre-extensions { };
 
   pyrender = callPackage ../development/python-modules/pyrender { };
-
-  pyreqwest-impersonate = callPackage ../development/python-modules/pyreqwest-impersonate {
-    inherit (pkgs.darwin.apple_sdk.frameworks) SystemConfiguration;
-  };
 
   pyrevolve = callPackage ../development/python-modules/pyrevolve { };
 
@@ -10774,7 +10780,9 @@ self: super: with self; {
   };
 
   # Protobuf 5.x
-  protobuf5 = callPackage ../development/python-modules/protobuf/default.nix { };
+  protobuf5 = callPackage ../development/python-modules/protobuf/default.nix {
+    inherit (pkgs.__splicedPackages) protobuf;
+  };
 
   # If a protobuf upgrade causes many Python packages to fail, please pin it here to the previous version.
   protobuf = protobuf5;
@@ -15963,8 +15971,6 @@ self: super: with self; {
 
   transmission-rpc = callPackage ../development/python-modules/transmission-rpc { };
 
-  transmissionrpc = callPackage ../development/python-modules/transmissionrpc { };
-
   trectools = callPackage ../development/python-modules/trectools { };
 
   tree-sitter = callPackage ../development/python-modules/tree-sitter { };
@@ -17446,9 +17452,7 @@ self: super: with self; {
 
   wat = callPackage ../development/python-modules/wat { };
 
-  watchdog = callPackage ../development/python-modules/watchdog {
-    inherit (pkgs.darwin.apple_sdk.frameworks) CoreServices;
-  };
+  watchdog = callPackage ../development/python-modules/watchdog { };
 
   watchdog-gevent = callPackage ../development/python-modules/watchdog-gevent { };
 
