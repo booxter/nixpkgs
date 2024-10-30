@@ -52,8 +52,15 @@ let
     icu73 = icu73';
   };
 
-in rec {
-  thunderbird = thunderbird-128;
+in {
+  thunderbird = common {
+    version = "132.0";
+    sha512 = "71206606d691e3b257b4b163e56604eaff221a43f88015fcbdbbbb3bbd708a7459f61b0470f7534ce9adafd41561e11b3487484fbfe3e95a06674785cae97029";
+
+    updateScript = callPackage ./update.nix {
+      attrPath = "thunderbird-unwrapped";
+    };
+  };
 
   thunderbird-128 = common {
     version = "128.4.0esr";
