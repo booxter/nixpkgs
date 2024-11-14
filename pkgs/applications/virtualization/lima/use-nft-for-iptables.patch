@@ -1,0 +1,13 @@
+diff --git a/pkg/cidata/cidata.TEMPLATE.d/boot/30-install-packages.sh b/pkg/cidata/cidata.TEMPLATE.d/boot/30-install-packages.sh
+index 85852e50..1255bf79 100644
+--- a/pkg/cidata/cidata.TEMPLATE.d/boot/30-install-packages.sh
++++ b/pkg/cidata/cidata.TEMPLATE.d/boot/30-install-packages.sh
+@@ -65,7 +65,7 @@ elif command -v dnf >/dev/null 2>&1; then
+ 		fi
+ 	fi
+ 	if [ "${INSTALL_IPTABLES}" = 1 ] && [ ! -e /usr/sbin/iptables ]; then
+-		pkgs="${pkgs} iptables"
++		pkgs="${pkgs} iptables-nft"
+ 	fi
+ 	if [ "${LIMA_CIDATA_CONTAINERD_USER}" = 1 ]; then
+ 		if ! command -v newuidmap >/dev/null 2>&1; then

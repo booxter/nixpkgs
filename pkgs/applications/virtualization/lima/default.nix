@@ -28,6 +28,10 @@ buildGoModule rec {
 
   buildInputs = lib.optionals stdenv.hostPlatform.isDarwin [ apple-sdk_15 ];
 
+  patches = [
+    ./use-nft-for-iptables.patch
+  ];
+
   postPatch = ''
     substituteInPlace Makefile \
       --replace-fail 'codesign -f -v --entitlements vz.entitlements -s -' 'codesign -f --entitlements vz.entitlements -s -'
