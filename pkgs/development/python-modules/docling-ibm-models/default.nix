@@ -9,22 +9,24 @@
   numpy,
   opencv-python-headless,
   pillow,
+  safetensors,
   torch,
   torchvision,
   tqdm,
+  transformers,
   pytestCheckHook,
 }:
 
 buildPythonPackage rec {
   pname = "docling-ibm-models";
-  version = "2.0.4";
+  version = "3.1.2";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "DS4SD";
     repo = "docling-ibm-models";
     tag = "v${version}";
-    hash = "sha256-QZvkkazxgkGuSQKIYI+YghH7pLlDSEbCGhg89gZsOpk=";
+    hash = "sha256-GtVQwUcKJKS7PYpvI54obcOqx0TbOYkeKR5XXfcHaqY=";
   };
 
   build-system = [
@@ -38,9 +40,11 @@ buildPythonPackage rec {
     numpy
     opencv-python-headless
     pillow
+    safetensors
     torch
     torchvision
     tqdm
+    transformers
   ];
 
   pythonRelaxDeps = [

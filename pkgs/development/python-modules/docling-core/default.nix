@@ -8,7 +8,10 @@
   pandas,
   pillow,
   pydantic,
+  semchunk,
   tabulate,
+  transformers,
+  typer,
   jsondiff,
   requests,
   pytestCheckHook,
@@ -16,14 +19,14 @@
 
 buildPythonPackage rec {
   pname = "docling-core";
-  version = "2.3.2";
+  version = "2.14.0";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "DS4SD";
     repo = "docling-core";
     tag = "v${version}";
-    hash = "sha256-N8rL+5bCVF4Qi5eqgkaB2r3LTYoqTVPeK4gQ6stiW/w=";
+    hash = "sha256-Iz3w8dGmpnAIVMGbvmaB/nl2fXIuX0flKCrZy4VJ0Q4=";
   };
 
   build-system = [
@@ -37,6 +40,10 @@ buildPythonPackage rec {
     pillow
     pydantic
     tabulate
+    # are these just test only?
+    semchunk
+    transformers
+    typer
   ];
 
   pythonRelaxDeps = [
@@ -52,6 +59,10 @@ buildPythonPackage rec {
     pytestCheckHook
     requests
   ];
+
+  # TODO: fix, it downloads something when importing tests (so disabledTests is
+  # not enough)
+  doCheck = false;
 
   meta = {
     changelog = "https://github.com/DS4SD/docling-core/blob/${version}/CHANGELOG.md";

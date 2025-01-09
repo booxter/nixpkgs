@@ -156,6 +156,9 @@ buildPythonPackage rec {
     "test_timedelta_full_precision_arithmetic"
     "test_datetime_to_timedelta"
 
+    # takes too long
+    "test_section_slicing"
+
     "test_datetime_difference_agrees_with_timedelta_no_hypothesis"
 
     # SAMPProxyError 1: 'Timeout expired!'

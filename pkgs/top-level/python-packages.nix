@@ -3127,6 +3127,10 @@ self: super: with self; {
 
   deepmerge = callPackage ../development/python-modules/deepmerge { };
 
+  deepsearch-glm = callPackage ../development/python-modules/deepsearch-glm {
+    loguru-cpp = pkgs.loguru;
+  };
+
   deepsearch-toolkit = callPackage ../development/python-modules/deepsearch-toolkit { };
 
   deeptoolsintervals = callPackage ../development/python-modules/deeptoolsintervals { };
@@ -3780,6 +3784,8 @@ self: super: with self; {
   docker-pycreds = callPackage ../development/python-modules/docker-pycreds { };
 
   dockerspawner = callPackage ../development/python-modules/dockerspawner { };
+
+  docling = callPackage ../development/python-modules/docling { };
 
   docling-core = callPackage ../development/python-modules/docling-core { };
 
@@ -6357,6 +6363,18 @@ self: super: with self; {
 
   insteon-frontend-home-assistant = callPackage ../development/python-modules/insteon-frontend-home-assistant { };
 
+  instructlab-dolomite = callPackage ../development/python-modules/instructlab-dolomite { };
+
+  instructlab-eval = callPackage ../development/python-modules/instructlab-eval { };
+
+  instructlab-quantize = callPackage ../development/python-modules/instructlab-quantize { };
+
+  instructlab-schema = callPackage ../development/python-modules/instructlab-schema { };
+
+  instructlab-sdg = callPackage ../development/python-modules/instructlab-sdg { };
+
+  instructlab-training = callPackage ../development/python-modules/instructlab-training { };
+
   instructor = callPackage ../development/python-modules/instructor { };
 
   intake = callPackage ../development/python-modules/intake { };
@@ -7643,6 +7661,8 @@ self: super: with self; {
     llvm = pkgs.llvm_14;
   };
 
+  lm-eval = callPackage ../development/python-modules/lm-eval { };
+
   lm-format-enforcer = callPackage ../development/python-modules/lm-format-enforcer { };
 
   lmdb = callPackage ../development/python-modules/lmdb {
@@ -8484,6 +8504,8 @@ self: super: with self; {
   mpegdash = callPackage ../development/python-modules/mpegdash { };
 
   mpi4py = callPackage ../development/python-modules/mpi4py { };
+
+  mpire = callPackage ../development/python-modules/mpire { };
 
   mpldatacursor = callPackage ../development/python-modules/mpldatacursor { };
 
@@ -9548,6 +9570,8 @@ self: super: with self; {
   oci = callPackage ../development/python-modules/oci { };
 
   ocifs = callPackage ../development/python-modules/ocifs { };
+
+  ocrmac = callPackage ../development/python-modules/ocrmac { };
 
   ocrmypdf = callPackage ../development/python-modules/ocrmypdf {
     tesseract = pkgs.tesseract5;
@@ -12262,6 +12286,9 @@ self: super: with self; {
 
   pyobihai = callPackage ../development/python-modules/pyobihai { };
 
+  # TODO: expose all frameworks
+  pyobjc-framework-Vision = callPackage ../development/python-modules/pyobjc-framework-Vision { };
+
   pyocd = callPackage ../development/python-modules/pyocd { };
 
   pyocd-pemicro = callPackage ../development/python-modules/pyocd-pemicro { };
@@ -12350,6 +12377,8 @@ self: super: with self; {
   pypdf2 = callPackage ../development/python-modules/pypdf2 { };
 
   pypdf3 = callPackage ../development/python-modules/pypdf3 { };
+
+  pypdfium2 = callPackage ../development/python-modules/pypdfium2 { };
 
   pypeg2 = callPackage ../development/python-modules/pypeg2 { };
 
@@ -13831,6 +13860,8 @@ self: super: with self; {
 
   radon = callPackage ../development/python-modules/radon { };
 
+  ragas = callPackage ../development/python-modules/ragas { };
+
   railroad-diagrams = callPackage ../development/python-modules/railroad-diagrams { };
 
   rainbowstream = callPackage ../development/python-modules/rainbowstream { };
@@ -14627,6 +14658,8 @@ self: super: with self; {
   selenium-wire = callPackage ../development/python-modules/selenium-wire { };
 
   semantic-version = callPackage ../development/python-modules/semantic-version { };
+
+  semchunk = callPackage ../development/python-modules/semchunk { };
 
   semgrep = callPackage ../development/python-modules/semgrep {
     semgrep-core = callPackage ../development/python-modules/semgrep/semgrep-core.nix { };
@@ -16401,6 +16434,8 @@ self: super: with self; {
 
   tqdm = callPackage ../development/python-modules/tqdm { };
 
+  tqdm-multiprocess = callPackage ../development/python-modules/tqdm-multiprocess { };
+
   traceback2 = callPackage ../development/python-modules/traceback2 { };
 
   tracerite = callPackage ../development/python-modules/tracerite { };
@@ -16512,6 +16547,8 @@ self: super: with self; {
   triton-bin = callPackage ../development/python-modules/triton/bin.nix { };
 
   tritonclient = callPackage ../development/python-modules/tritonclient { };
+
+  trl = callPackage ../development/python-modules/trl { };
 
   trlib = toPythonModule (pkgs.trlib.override { pythonSupport = true; python3Packages = self;});
 
@@ -18151,6 +18188,8 @@ self: super: with self; {
   woob = callPackage ../development/python-modules/woob { };
 
   woodblock = callPackage ../development/python-modules/woodblock { };
+
+  word2number = callPackage ../development/python-modules/word2number { };
 
   wordcloud = callPackage ../development/python-modules/wordcloud { };
 

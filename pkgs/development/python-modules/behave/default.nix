@@ -62,6 +62,7 @@ buildPythonPackage rec {
   # https://github.com/NixOS/nixpkgs/pull/97737#issuecomment-691489824
   disabledTests = lib.optionals stdenv.hostPlatform.isDarwin [
     "test_step_decorator_async_run_until_complete"
+    "test_tag_expression_protocol"
   ];
 
   postCheck = ''

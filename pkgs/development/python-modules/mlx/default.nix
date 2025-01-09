@@ -1,5 +1,6 @@
 {
   lib,
+  stdenv,
   fetchFromGitHub,
   buildPythonPackage,
   pybind11,
@@ -9,6 +10,8 @@
   blas,
   lapack,
   setuptools,
+  nanobind,
+  apple-sdk_15,
 }:
 
 let
@@ -25,25 +28,25 @@ let
     rev = "v3.11.3";
     hash = "sha256-7F0Jon+1oWL7uqet5i1IgHX0fUw/+z0QwEcA3zs5xHg=";
   };
+  fmt = fetchFromGitHub {
+    owner = "fmtlib";
+    repo = "fmt";
+    rev = "11.1.1";
+    hash = "sha256-nNFKGB8a399KPsMI/zLVTxgFvIxnaTHVFbOfd9ClQeo=";
+  };
 in
 buildPythonPackage rec {
   pname = "mlx";
-  version = "0.21.1";
+  version = "0.22.0";
 
   src = fetchFromGitHub {
     owner = "ml-explore";
     repo = "mlx";
     rev = "refs/tags/v${version}";
-    hash = "sha256-wxv9bA9e8VyFv/FMh63sUTTNgkXHGQJNQhLuVynczZA=";
+    hash = "sha256-uw8Nq26XoyMGNO8lEEAAO1e8Jt2SLg+CWfGZh829nxk=";
   };
 
   pyproject = true;
-
-  patches = [
-    # With Darwin SDK 11 we cannot include vecLib/cblas_new.h, this needs to wait for PR #229210
-    # In the meantime, pretend Accelerate is not available and use blas/lapack instead.
-    ./disable-accelerate.patch
-  ];
 
   postPatch = ''
     substituteInPlace CMakeLists.txt \
@@ -54,11 +57,12 @@ buildPythonPackage rec {
 
   env = {
     PYPI_RELEASE = version;
-    # we can't use Metal compilation with Darwin SDK 11
     CMAKE_ARGS = toString [
+      # we can't use Metal compilation because metal tool only ships with Xcode
       (lib.cmakeBool "MLX_BUILD_METAL" false)
       (lib.cmakeOptionType "filepath" "FETCHCONTENT_SOURCE_DIR_GGUFLIB" "${gguf-tools}")
       (lib.cmakeOptionType "filepath" "FETCHCONTENT_SOURCE_DIR_JSON" "${nlohmann_json}")
+      (lib.cmakeOptionType "filepath" "FETCHCONTENT_SOURCE_DIR_FMT" "${fmt}")
     ];
   };
 
@@ -68,6 +72,7 @@ buildPythonPackage rec {
     xcbuild
     zsh
     gguf-tools
+    fmt
     nlohmann_json
     setuptools
   ];
@@ -75,7 +80,8 @@ buildPythonPackage rec {
   buildInputs = [
     blas
     lapack
-  ];
+    nanobind
+  ] ++ lib.optionals stdenv.hostPlatform.isDarwin [ apple-sdk_15 ];
 
   meta = with lib; {
     homepage = "https://github.com/ml-explore/mlx";

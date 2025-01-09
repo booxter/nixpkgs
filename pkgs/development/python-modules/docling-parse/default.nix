@@ -15,18 +15,20 @@
   qpdf,
   loguru-cpp,
   pytestCheckHook,
+  autoflake,
+  pillow,
 }:
 
 buildPythonPackage rec {
   pname = "docling-parse";
-  version = "2.0.3";
+  version = "3.0.0";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "DS4SD";
     repo = "docling-parse";
     tag = "v${version}";
-    hash = "sha256-pZJ7lneg4ftAoWS5AOflkkKCwZGF4TJIuqDjq4W4VBw=";
+    hash = "sha256-jZ0TAwwiSAAemViP3rxCo99U7qmh6tdk2CflCgsyJIk=";
   };
 
   dontUseCmakeConfigure = true;
@@ -60,7 +62,13 @@ buildPythonPackage rec {
   ];
 
   dependencies = [
+    autoflake # TODO: why though? seems like dev tool only
+    pillow
     tabulate
+  ];
+
+  pythonRelaxDeps = [
+    "pillow"
   ];
 
   pythonImportsCheck = [
