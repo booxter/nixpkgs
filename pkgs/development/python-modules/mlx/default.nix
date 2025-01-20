@@ -1,14 +1,20 @@
 {
   lib,
+  stdenv,
   fetchFromGitHub,
   buildPythonPackage,
-  pybind11,
+  apple-sdk_13,
+  blas,
   cmake,
+  darwinMinVersionHook,
+  lapack,
+  nanobind,
+  numpy,
+  pybind11,
+  pytestCheckHook,
+  setuptools-scm,
   xcbuild,
   zsh,
-  blas,
-  lapack,
-  setuptools,
 }:
 
 let
@@ -25,29 +31,29 @@ let
     rev = "v3.11.3";
     hash = "sha256-7F0Jon+1oWL7uqet5i1IgHX0fUw/+z0QwEcA3zs5xHg=";
   };
+  fmt = fetchFromGitHub {
+    owner = "fmtlib";
+    repo = "fmt";
+    rev = "11.1.1";
+    hash = "sha256-nNFKGB8a399KPsMI/zLVTxgFvIxnaTHVFbOfd9ClQeo=";
+  };
 in
 buildPythonPackage rec {
   pname = "mlx";
-  version = "0.21.1";
+  version = "0.23.1";
 
   src = fetchFromGitHub {
     owner = "ml-explore";
     repo = "mlx";
     rev = "refs/tags/v${version}";
-    hash = "sha256-wxv9bA9e8VyFv/FMh63sUTTNgkXHGQJNQhLuVynczZA=";
+    hash = "";
   };
 
   pyproject = true;
 
-  patches = [
-    # With Darwin SDK 11 we cannot include vecLib/cblas_new.h, this needs to wait for PR #229210
-    # In the meantime, pretend Accelerate is not available and use blas/lapack instead.
-    ./disable-accelerate.patch
-  ];
-
   postPatch = ''
     substituteInPlace CMakeLists.txt \
-      --replace "/usr/bin/xcrun" "${xcbuild}/bin/xcrun" \
+      --replace-fail "/usr/bin/xcrun" "${xcbuild}/bin/xcrun" \
   '';
 
   dontUseCmakeConfigure = true;
@@ -57,36 +63,52 @@ buildPythonPackage rec {
 
   env = {
     PYPI_RELEASE = version;
-    # we can't use Metal compilation with Darwin SDK 11
+    # we can't use Metal compilation with Darwin SDK
     CMAKE_ARGS = toString [
       (lib.cmakeBool "MLX_BUILD_METAL" false)
       (lib.cmakeOptionType "filepath" "FETCHCONTENT_SOURCE_DIR_GGUFLIB" "${gguf-tools}")
       (lib.cmakeOptionType "filepath" "FETCHCONTENT_SOURCE_DIR_JSON" "${nlohmann_json}")
+      (lib.cmakeOptionType "filepath" "FETCHCONTENT_SOURCE_DIR_FMT" "${fmt}")
     ];
   };
 
-  nativeBuildInputs = [
+  build-system = [
     cmake
+    nanobind
+    setuptools-scm
+  ];
+
+  nativeBuildInputs = [
+    fmt
+    gguf-tools
+    nlohmann_json
     pybind11
     xcbuild
     zsh
-    gguf-tools
-    nlohmann_json
-    setuptools
   ];
 
   buildInputs = [
     blas
     lapack
+  ] ++ lib.optionals stdenv.isDarwin [
+    # On older SDK versions, build fails with:
+    # error: no matching function for call to 'sgeqrf_'
+    apple-sdk_13
+    (darwinMinVersionHook "13.3")
   ];
 
-  meta = with lib; {
+  nativeCheckInputs = [
+    numpy
+    pytestCheckHook
+  ];
+
+  meta = {
     homepage = "https://github.com/ml-explore/mlx";
     description = "Array framework for Apple silicon";
     changelog = "https://github.com/ml-explore/mlx/releases/tag/v${version}";
-    license = licenses.mit;
+    license = lib.licenses.mit;
     platforms = [ "aarch64-darwin" ];
-    maintainers = with maintainers; [
+    maintainers = with lib.maintainers; [
       viraptor
       Gabriella439
     ];
