@@ -6,31 +6,29 @@
   fetchFromGitHub,
   fsspec,
   huggingface-hub,
-  importlib-metadata,
   multiprocess,
   numpy,
   packaging,
   pandas,
   pyarrow,
-  pythonOlder,
   requests,
-  responses,
   tqdm,
   xxhash,
+  setuptools-scm,
+  filelock,
+  pyyaml,
 }:
 
 buildPythonPackage rec {
   pname = "datasets";
-  version = "2.21.0";
-  format = "setuptools";
-
-  disabled = pythonOlder "3.8";
+  version = "3.2.0";
+  pyproject = true;
 
   src = fetchFromGitHub {
     owner = "huggingface";
     repo = pname;
     tag = version;
-    hash = "sha256-b84Y7PixZUG1VXW11Q4fKxEcsWJjpXEHZIYugf2MSUU=";
+    hash = "sha256-3Q4tNLA9qUb7XdxP1NftYDcVUgq5ol9OZfklhmadk5I=";
   };
 
   # remove pyarrow<14.0.1 vulnerability fix
@@ -39,9 +37,14 @@ buildPythonPackage rec {
       --replace "import pyarrow_hotfix" "#import pyarrow_hotfix"
   '';
 
-  propagatedBuildInputs = [
+  build-system = [
+    setuptools-scm
+  ];
+
+  dependencies = [
     aiohttp
     dill
+    filelock
     fsspec
     huggingface-hub
     multiprocess
@@ -49,11 +52,15 @@ buildPythonPackage rec {
     packaging
     pandas
     pyarrow
+    pyyaml
     requests
-    responses
     tqdm
     xxhash
-  ] ++ lib.optionals (pythonOlder "3.8") [ importlib-metadata ];
+  ] ++ fsspec.optional-dependencies.http;
+
+  pythonRelaxDeps = [
+    "dill"
+  ];
 
   # Tests require pervasive internet access
   doCheck = false;
@@ -63,13 +70,13 @@ buildPythonPackage rec {
 
   pythonImportsCheck = [ "datasets" ];
 
-  meta = with lib; {
+  meta = {
     description = "Open-access datasets and evaluation metrics for natural language processing";
     mainProgram = "datasets-cli";
     homepage = "https://github.com/huggingface/datasets";
     changelog = "https://github.com/huggingface/datasets/releases/tag/${version}";
-    license = licenses.asl20;
-    platforms = platforms.unix;
+    license = lib.licenses.asl20;
+    platforms = lib.platforms.unix;
     maintainers = [ ];
   };
 }

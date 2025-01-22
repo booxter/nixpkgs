@@ -497,6 +497,8 @@ self: super: with self; {
 
   airly = callPackage ../development/python-modules/airly { };
 
+  airportsdata = callPackage ../development/python-modules/airportsdata { };
+
   airthings-ble = callPackage ../development/python-modules/airthings-ble { };
 
   airthings-cloud = callPackage ../development/python-modules/airthings-cloud { };
@@ -10322,6 +10324,8 @@ self: super: with self; {
   };
 
   outlines = callPackage ../development/python-modules/outlines { };
+
+  outlines-core = callPackage ../development/python-modules/outlines-core { };
 
   overly = callPackage ../development/python-modules/overly { };
 

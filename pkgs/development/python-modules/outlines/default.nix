@@ -1,70 +1,73 @@
 {
   lib,
   buildPythonPackage,
-  fetchFromGitHub,
-  setuptools,
+  fetchPypi,
+  pytestCheckHook,
   setuptools-scm,
   interegular,
-  cloudpickle,
-  datasets,
-  diskcache,
-  joblib,
-  jsonschema,
-  pyairports,
-  pycountry,
-  pydantic,
+  jinja2,
   lark,
   nest-asyncio,
-  numba,
-  scipy,
+  numpy,
+  cloudpickle,
+  diskcache,
+  pydantic,
+  referencing,
+  jsonschema,
+  requests,
+  tqdm,
+  typing-extensions,
+  pycountry,
+  airportsdata,
   torch,
-  transformers,
+  outlines-core,
 }:
 
 buildPythonPackage rec {
   pname = "outlines";
-  version = "0.0.46";
+  version = "0.1.13";
   pyproject = true;
 
-  src = fetchFromGitHub {
-    owner = "outlines-dev";
-    repo = pname;
-    tag = version;
-    hash = "sha256-6VH9BcMRVRf2xvLcK3GNA1pGgAOs95UOlFQ6KxHXwKo=";
+  src = fetchPypi {
+    inherit pname version;
+    hash = "sha256-AjPLP/rpy2sBrY08MrfYfj8c973HsooLyCzT0nfAm8o=";
   };
 
-  nativeBuildInputs = [
-    setuptools
+  build-system = [
     setuptools-scm
   ];
 
-  propagatedBuildInputs = [
+  dependencies = [
     interegular
-    cloudpickle
-    datasets
-    diskcache
-    joblib
-    jsonschema
-    pydantic
+    jinja2
     lark
     nest-asyncio
-    numba
-    scipy
-    torch
-    transformers
+    numpy
+    cloudpickle
+    diskcache
+    pydantic
+    referencing
+    jsonschema
+    requests
+    tqdm
+    typing-extensions
     pycountry
-    pyairports
+    airportsdata
+    torch
+    outlines-core
   ];
 
-  checkPhase = ''
-    export HOME=$(mktemp -d)
-    python3 -c 'import outlines'
-  '';
+  pythonImportsCheck = [
+    "outlines"
+  ];
 
-  meta = with lib; {
+  nativeCheckInputs = [ pytestCheckHook ];
+
+  meta = {
     description = "Structured text generation";
+    changelog = "https://github.com/outlines-dev/outlines/releases/tag/${version}";
     homepage = "https://github.com/outlines-dev/outlines";
-    license = licenses.asl20;
-    maintainers = with maintainers; [ lach ];
+    license = lib.licenses.asl20;
+    maintainers = with lib.maintainers; [ lach ];
   };
 }
