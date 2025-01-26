@@ -51,6 +51,10 @@ buildPythonPackage rec {
   };
   # src = /home/gaetan/llama-cpp-python;
 
+  patches = [
+    ./llama-metal-device-without-name.patch
+  ];
+
   dontUseCmakeConfigure = true;
   SKBUILD_CMAKE_ARGS = lib.strings.concatStringsSep ";" (
     lib.optionals cudaSupport [

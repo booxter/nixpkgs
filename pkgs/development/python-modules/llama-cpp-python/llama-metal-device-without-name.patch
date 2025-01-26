@@ -1,0 +1,13 @@
+--- a/vendor/llama.cpp/ggml/src/ggml-metal/ggml-metal.m
++++ b/vendor/llama.cpp/ggml/src/ggml-metal/ggml-metal.m
+@@ -74,7 +74,9 @@ static id<MTLDevice> ggml_backend_metal_device_acq(struct ggml_backend_metal_dev
+         ctx->use_bfloat = false;
+ #endif
+ 
+-        strncpy(ctx->name, [[ctx->mtl_device name] UTF8String], sizeof(ctx->name) - 1);
++	if ([ctx->mtl_device name]) {
++          strncpy(ctx->name, [[ctx->mtl_device name] UTF8String], sizeof(ctx->name) - 1);
++	}
+     }
+ 
+     ctx->mtl_device_ref_count++;
