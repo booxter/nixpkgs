@@ -2,6 +2,7 @@
   lib,
   buildGoModule,
   fetchFromGitHub,
+  fetchpatch2,
   buildEnv,
   linkFarm,
   overrideCC,
@@ -52,6 +53,18 @@ let
     hash = "sha256-DW7gHNyW1ML8kqgMFsqTxS/30bjNlWmYmeov2/uZn00=";
     fetchSubmodules = true;
   };
+
+  patches = [
+    # fix broken download: https://github.com/ollama/ollama/pull/8480
+    (fetchpatch2 {
+      url = "https://github.com/ollama/ollama/pull/8480/commits/6416a514ad18858255512a87a1628fd683e4a9db.patch?full_index=1";
+      hash = "sha256-32kfQFvIReUax2qnHR0bsE5I5C6/CrqrWmwCC2XizuY=";
+    })
+    (fetchpatch2 {
+      url = "https://github.com/ollama/ollama/pull/8480/commits/bc62d3693111d4de013e4e09beabddfc2cea2502.patch?full_index=1";
+      hash = "sha256-WeFFMGaHv5vnUkKD1L2GP0i7lHqvNFWwOT8tBbtQ2sU=";
+    })
+  ];
 
   vendorHash = "sha256-1uk3Oi0n4Q39DVZe3PnZqqqmlwwoHmEolcRrib0uu4I=";
 
@@ -140,6 +153,7 @@ goBuild {
     pname
     version
     src
+    patches
     vendorHash
     ;
 
