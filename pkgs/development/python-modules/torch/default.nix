@@ -271,7 +271,8 @@ buildPythonPackage rec {
   };
 
   patches =
-    lib.optionals cudaSupport [ ./fix-cmake-cuda-toolkit.patch ]
+    [ ./clang19-template-warning.patch ]
+    ++ lib.optionals cudaSupport [ ./fix-cmake-cuda-toolkit.patch ]
     ++ lib.optionals stdenv.hostPlatform.isLinux [
       # Propagate CUPTI to Kineto by overriding the search path with environment variables.
       # https://github.com/pytorch/pytorch/pull/108847
@@ -394,6 +395,10 @@ buildPythonPackage rec {
 
   # Explicitly enable MPS for Darwin
   USE_MPS = setBool stdenv.hostPlatform.isDarwin;
+
+  # building torch.distributed on Darwin is disabled by default
+  # https://pytorch.org/docs/stable/distributed.html#torch.distributed.is_available
+  USE_DISTRIBUTED = lib.optionals stdenv.hostPlatform.isDarwin 1;
 
   cmakeFlags =
     [
