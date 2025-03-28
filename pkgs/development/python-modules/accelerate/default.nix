@@ -3,6 +3,7 @@
   lib,
   buildPythonPackage,
   fetchFromGitHub,
+  fetchpatch2,
   pythonAtLeast,
 
   # buildInputs
@@ -42,6 +43,14 @@ buildPythonPackage rec {
     tag = "v${version}";
     hash = "sha256-J4eDm/PcyKK3256l6CAWUj4AWTB6neTKgxbBmul0BPE=";
   };
+
+  patches = [
+    # Fix tests on darwin: https://github.com/huggingface/accelerate/pull/3464
+    (fetchpatch2 {
+      url = "https://github.com/huggingface/accelerate/pull/3464/commits/1c603ae38757947a5a4776addf700400b6308982.patch?full_index=1";
+      hash = "sha256-APcNc+rXbq7GGltxESqRacZ+sN/TxYdnPhNvx8NQnd4=";
+    })
+  ];
 
   buildInputs = [ llvmPackages.openmp ];
 
