@@ -3,6 +3,7 @@
   stdenv,
   buildPythonPackage,
   fetchFromGitHub,
+  fetchpatch2,
 
   # build-system
   setuptools,
@@ -28,6 +29,13 @@ buildPythonPackage rec {
     tag = "v${version}";
     hash = "sha256-+jt+if9aAbEd2XDMC7RpZmJpm4VUEZMt5xoLOP/esMg=";
   };
+
+  patches = [
+    (fetchpatch2 {
+      url = "https://github.com/speediedan/finetuning-scheduler/commit/78e6e225f353d1ba95db05d7fc6ff541859ed6a2.patch?full_index=1";
+      hash = "sha256-Um7Tsps+LzOD8nBY5h+Eq6nsfgefUeff2eK8b+doWfc=";
+    })
+  ];
 
   build-system = [ setuptools ];
 
