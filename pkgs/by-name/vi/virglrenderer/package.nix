@@ -1,6 +1,8 @@
 {
   lib,
   stdenv,
+  fetchFromGitHub,
+  fetchgit,
   fetchurl,
   meson,
   ninja,
@@ -14,26 +16,52 @@
   nativeContextSupport ? stdenv.hostPlatform.isLinux,
   vaapiSupport ? !stdenv.hostPlatform.isDarwin,
   libva,
-  vulkanSupport ? stdenv.hostPlatform.isLinux,
+  vulkanSupport ? stdenv.hostPlatform.isLinux || stdenv.hostPlatform.isDarwin,
   vulkan-headers,
   vulkan-loader,
   gitUpdater,
+  moltenvk,
 }:
 
 stdenv.mkDerivation rec {
   pname = "virglrenderer";
   version = "1.1.1";
 
-  src = fetchurl {
-    url = "https://gitlab.freedesktop.org/virgl/virglrenderer/-/archive/${version}/virglrenderer-${version}.tar.bz2";
-    hash = "sha256-D+SJqBL76z1nGBmcJ7Dzb41RvFxU2Ak6rVOwDRB94rM=";
+  src = fetchgit {
+    url = "https://gitlab.freedesktop.org/slp/virglrenderer.git";
+    rev = "d9752dd5fd4172e8a5694bbfb72be0e0a51f9ef3";
+    hash = "sha256-ANGduHj+QYf8fVTLiT82qlPpFBA6fhukYtWa2gvZg6E=";
   };
+  #src = fetchurl {
+  #  url = "https://gitlab.freedesktop.org/virgl/virglrenderer/-/archive/${version}/virglrenderer-${version}.tar.bz2";
+  #  hash = "sha256-D+SJqBL76z1nGBmcJ7Dzb41RvFxU2Ak6rVOwDRB94rM=";
+  #};
+
+  #patches = [
+  #  (fetchurl {
+  #    url = "https://github.com/booxter/virglrenderer/commit/3029539505b1de3c5dfe2d44ed5686c875662708.patch";
+  #    sha256 = "sha256-R+1dTgy/1+SMLyc92CuYKUfYdFZ1yBmIbDg4bCaw37Y=";
+  #  })
+  #  (fetchurl {
+  #    url = "https://github.com/booxter/virglrenderer/commit/1d0ee20d2e91f58e778031178b7e0fcfef03fffd.patch";
+  #    sha256 = "sha256-qlcci1rAB4A+Z14e6Bt8JFuqsHOZDr/07lQhW45kR8w=";
+  #  })
+  #];
+
+  postPatch = ''
+    substituteInPlace meson.build \
+      --replace-fail "libdrm_dep = dependency('libdrm', version : '>=2.4.50', required: get_option('drm').enabled())" "" \
+      --replace-fail "libdrm_dep.found()" "0"
+    substituteInPlace src/meson.build \
+      --replace-fail "libdrm_dep," ""
+  '';
 
   separateDebugInfo = true;
 
   buildInputs =
     [
       libepoxy
+      moltenvk
     ]
     ++ lib.optionals vaapiSupport [ libva ]
     ++ lib.optionals vulkanSupport [
@@ -43,8 +71,8 @@ stdenv.mkDerivation rec {
     ++ lib.optionals stdenv.hostPlatform.isLinux [
       libGLU
       libX11
-      libdrm
       libgbm
+      libdrm
     ];
 
   nativeBuildInputs = [

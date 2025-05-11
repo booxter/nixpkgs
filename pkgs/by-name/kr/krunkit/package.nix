@@ -15,23 +15,23 @@
 }:
 
 stdenv.mkDerivation rec {
-  pname = "krunvm";
-  version = "0.2.3";
+  pname = "krunkit";
+  version = "0.2.0";
 
   src = fetchFromGitHub {
     owner = "containers";
     repo = pname;
     rev = "v${version}";
-    hash = "sha256-IXofYsOmbrjq8Zq9+a6pvBYsvZFcKzN5IvCuHaxwazI=";
+    hash = "sha256-oT9/0EonR2GZRAB5fro0rmBZNx3hFszvy6XOqNu+buE=";
   };
 
-  patches = [
-    ./dont-call-krun_set_mapped_volumes.patch
-  ];
+  #patches = [
+  #  ./dont-call-krun_set_mapped_volumes.patch
+  #];
 
   cargoDeps = rustPlatform.fetchCargoVendor {
     inherit src;
-    hash = "sha256-Vmb5IgGyKGekuL018/Xiz9QroWIwTIUxVB57fb0X7Kw=";
+    hash = "sha256-3nQC2bZLXHD1/ugcm30fBv8Cx1xNuC5r0AimXk8LM7M=";
   };
 
   nativeBuildInputs = [
@@ -52,8 +52,8 @@ stdenv.mkDerivation rec {
 
   postPatch = ''
     # do not pollute etc
-    substituteInPlace src/utils.rs \
-      --replace "etc/containers" "share/krunvm/containers"
+    #substituteInPlace src/utils.rs \
+    #  --replace "etc/containers" "share/krunkit/containers"
   '';
 
   env.NIX_LDFLAGS = "-L${libkrun}/lib";
@@ -64,9 +64,9 @@ stdenv.mkDerivation rec {
   '';
 
   postInstall = ''
-    mkdir -p $out/share/krunvm/containers
-    install -D -m755 ${buildah-unwrapped.src}/docs/samples/registries.conf $out/share/krunvm/containers/registries.conf
-    install -D -m755 ${buildah-unwrapped.src}/tests/policy.json $out/share/krunvm/containers/policy.json
+    mkdir -p $out/share/krunkit/containers
+    install -D -m755 ${buildah-unwrapped.src}/docs/samples/registries.conf $out/share/krunkit/containers/registries.conf
+    install -D -m755 ${buildah-unwrapped.src}/tests/policy.json $out/share/krunkit/containers/policy.json
   '';
 
   # It attaches entitlements with codesign and strip removes those,
@@ -74,16 +74,17 @@ stdenv.mkDerivation rec {
   dontStrip = stdenv.hostPlatform.isDarwin;
 
   postFixup = ''
-    wrapProgram $out/bin/krunvm \
+    wrapProgram $out/bin/krunkit \
       --prefix PATH : ${lib.makeBinPath [ buildah ]} \
   '';
 
+  # TODO: Fix meta!
   meta = with lib; {
     description = "CLI-based utility for creating microVMs from OCI images";
-    homepage = "https://github.com/containers/krunvm";
+    homepage = "https://github.com/containers/krunkit";
     license = licenses.asl20;
     maintainers = with maintainers; [ nickcao ];
     platforms = libkrun.meta.platforms;
-    mainProgram = "krunvm";
+    mainProgram = "krunkit";
   };
 }

@@ -1,0 +1,46 @@
+commit e8d971e40aa079633c86303ca1df5e8c2fcfc081
+Author: Ihar Hrachyshka <ihar.hrachyshka@gmail.com>
+Date:   Sun May 11 19:28:20 2025 -0400
+
+    XXX
+    
+    Signed-off-by: Ihar Hrachyshka <ihar.hrachyshka@gmail.com>
+
+diff --git a/src/rutabaga_gfx/src/generated/virgl_renderer_bindings.rs b/src/rutabaga_gfx/src/generated/virgl_renderer_bindings.rs
+index 970e500..527fe17 100644
+--- a/src/rutabaga_gfx/src/generated/virgl_renderer_bindings.rs
++++ b/src/rutabaga_gfx/src/generated/virgl_renderer_bindings.rs
+@@ -397,13 +397,6 @@ extern "C" {
+         map_info: *mut u32,
+     ) -> ::std::os::raw::c_int;
+ }
+-#[cfg(target_os = "macos")]
+-extern "C" {
+-    pub fn virgl_renderer_resource_get_map_ptr(
+-        res_handle: u32,
+-        map_ptr: *mut u64,
+-    ) -> ::std::os::raw::c_int;
+-}
+ extern "C" {
+     pub fn virgl_renderer_resource_export_blob(
+         res_id: u32,
+diff --git a/src/rutabaga_gfx/src/virgl_renderer.rs b/src/rutabaga_gfx/src/virgl_renderer.rs
+index 47f26e8..439e97b 100644
+--- a/src/rutabaga_gfx/src/virgl_renderer.rs
++++ b/src/rutabaga_gfx/src/virgl_renderer.rs
+@@ -356,15 +356,6 @@ impl VirglRenderer {
+         Err(RutabagaError::Unsupported)
+     }
+ 
+-    #[cfg(target_os = "macos")]
+-    fn map_ptr(&self, resource_id: u32) -> RutabagaResult<u64> {
+-        let mut map_ptr = 0;
+-        let ret = unsafe { virgl_renderer_resource_get_map_ptr(resource_id, &mut map_ptr) };
+-        ret_to_res(ret)?;
+-
+-        Ok(map_ptr)
+-    }
+-
+     fn query(&self, resource_id: u32) -> RutabagaResult<Resource3DInfo> {
+         let query = export_query(resource_id)?;
+         if query.out_num_fds == 0 {

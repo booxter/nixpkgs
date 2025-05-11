@@ -1,6 +1,6 @@
 {
   lib,
-  stdenv,
+  gccStdenv,
   fetchurl,
   fetchpatch,
   pkg-config,
@@ -16,7 +16,7 @@
   xz,
   setupDebugInfoDirs,
   argp-standalone,
-  enableDebuginfod ? lib.meta.availableOn stdenv.hostPlatform libarchive,
+  enableDebuginfod ? lib.meta.availableOn gccStdenv.hostPlatform libarchive,
   sqlite,
   curl,
   json_c,
@@ -24,7 +24,12 @@
   libarchive,
   gitUpdater,
   autoreconfHook,
+  gnulib,
 }:
+
+let
+  stdenv = gccStdenv;
+in
 
 # TODO: Look at the hardcoded paths to kernel, modules etc.
 stdenv.mkDerivation rec {
@@ -63,7 +68,8 @@ stdenv.mkDerivation rec {
     ++ lib.optionals stdenv.hostPlatform.isMusl [ ./musl-error_h.patch ]
     # Prevent headers and binaries from colliding which results in an error.
     # https://sourceware.org/pipermail/elfutils-devel/2024q3/007281.html
-    ++ lib.optional (stdenv.targetPlatform.useLLVM or false) ./cxx-header-collision.patch;
+    ++ lib.optional (stdenv.targetPlatform.useLLVM || false) ./cxx-header-collision.patch;
+    #++ lib.optional (stdenv.targetPlatform.isDarwin) ./thread-local-darwin.patch;
 
   postPatch =
     ''
@@ -92,15 +98,21 @@ stdenv.mkDerivation rec {
       flex
       gettext
       bzip2
+      autoreconfHook
     ]
     ++ lib.optional enableDebuginfod pkg-config
-    ++ lib.optional (stdenv.targetPlatform.useLLVM or false) autoreconfHook;
+    ++ lib.optionals stdenv.hostPlatform.isDarwin [
+      gnulib
+    ];
   buildInputs =
     [
       zlib
       zstd
       bzip2
       xz
+    ]
+    ++ lib.optionals (stdenv.hostPlatform.isMusl || stdenv.hostPlatform.isDarwin) [
+      argp-standalone
     ]
     ++ lib.optionals stdenv.hostPlatform.isMusl [
       argp-standalone
@@ -128,10 +140,13 @@ stdenv.mkDerivation rec {
       # Versioned symbols are nice to have, but we can do without.
       (lib.enableFeature (!stdenv.hostPlatform.isMicroBlaze) "symbol-versioning")
     ]
-    ++ lib.optional (stdenv.targetPlatform.useLLVM or false) "--disable-demangler"
+    ++ lib.optional (stdenv.targetPlatform.useLLVM || false) "--disable-demangler"
     ++ lib.optionals stdenv.cc.isClang [
       "CFLAGS=-Wno-unused-private-field"
       "CXXFLAGS=-Wno-unused-private-field"
+    ]
+    ++ lib.optionals stdenv.hostPlatform.isDarwin [
+      "--disable-symbol-versioning"
     ];
 
   enableParallelBuilding = true;

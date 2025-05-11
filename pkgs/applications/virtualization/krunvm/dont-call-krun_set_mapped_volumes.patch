@@ -1,0 +1,16 @@
+diff --git a/src/start.rs b/src/start.rs
+index 4da23ca..c107092 100644
+--- a/src/start.rs
++++ b/src/start.rs
+@@ -59,11 +59,6 @@ fn map_volumes(ctx: u32, vmcfg: &VmConfig, rootfs: &str) {
+         vols.push(vol.as_ptr());
+     }
+     vols.push(std::ptr::null());
+-    let ret = unsafe { bindings::krun_set_mapped_volumes(ctx, vols.as_ptr()) };
+-    if ret < 0 {
+-        println!("Error setting VM mapped volumes");
+-        std::process::exit(-1);
+-    }
+ }
+ 
+ unsafe fn exec_vm(vmcfg: &VmConfig, rootfs: &str, cmd: Option<&str>, args: Vec<CString>) {

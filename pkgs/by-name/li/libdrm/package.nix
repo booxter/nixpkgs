@@ -9,7 +9,7 @@
   libpthreadstubs,
   withIntel ? lib.meta.availableOn stdenv.hostPlatform libpciaccess,
   libpciaccess,
-  withValgrind ? lib.meta.availableOn stdenv.hostPlatform valgrind-light,
+  withValgrind ? false,
   valgrind-light,
   gitUpdater,
 }:

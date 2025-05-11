@@ -3506,6 +3506,10 @@ with pkgs;
     inherit (darwin) sigtool;
   };
 
+  krunkit = callPackage ../by-name/kr/krunkit/package.nix {
+    inherit (darwin) sigtool;
+  };
+
   kronometer = libsForQt5.callPackage ../tools/misc/kronometer { };
 
   kwalletcli = libsForQt5.callPackage ../tools/security/kwalletcli { };
@@ -5180,6 +5184,15 @@ with pkgs;
         # Remove libcxx/libcxxabi, and add clang for AS if on darwin (it uses
         # clang's internal assembler).
         extraBuildInputs = lib.optional stdenv.hostPlatform.isDarwin clang.cc;
+      };
+
+  gccStdenvMy =
+    if stdenv.cc.isGNU then
+      stdenv
+    else
+      stdenv.override {
+        cc = buildPackages.gcc;
+        allowedRequisites = null;
       };
 
   gcc9Stdenv = overrideCC gccStdenv buildPackages.gcc9;

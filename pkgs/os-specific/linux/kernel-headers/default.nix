@@ -134,7 +134,7 @@ let
       meta = with lib; {
         description = "Header files and scripts for Linux kernel";
         license = licenses.gpl2Only;
-        platforms = platforms.linux;
+        platforms = platforms.unix;
       };
     };
 in
