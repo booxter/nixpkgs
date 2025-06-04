@@ -40,6 +40,10 @@ stdenv.mkDerivation rec {
     hash = "sha256-Dv3/8c4t9wt6FWActIjNey65GNIdeOh3vXc/ESlFYI0=";
   };
 
+  patches = [
+    ./include-strings-h.patch
+  ];
+
   desktopItems = [
     (makeDesktopItem {
       name = "xbill";
