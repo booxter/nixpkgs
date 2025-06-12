@@ -24,6 +24,7 @@ stdenv.mkDerivation rec {
     # https://gitlab.freedesktop.org/slirp/libslirp/-/commit/735904142f95d0500c0eae6bf763e4ad24b6b9fd
     # Vendorized due to frequent instability of the upstream repository.
     ./fix-dns-for-darwin.patch
+    ./honor-dns-server-port-on-darwin.patch
   ];
 
   separateDebugInfo = true;

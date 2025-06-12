@@ -1,0 +1,329 @@
+From 895faf260939fcca0539eef46a2786bf902b97f3 Mon Sep 17 00:00:00 2001
+From: Ihar Hrachyshka <ihar.hrachyshka@gmail.com>
+Date: Thu, 12 Jun 2025 13:35:04 -0400
+Subject: [PATCH] fix: honor dns server port number on macos
+
+Signed-off-by: Ihar Hrachyshka <ihar.hrachyshka@gmail.com>
+---
+ src/ip6_icmp.c |  3 ++-
+ src/slirp.c    | 46 +++++++++++++++++++++++++++++++++++-----------
+ src/slirp.h    |  9 +++++----
+ src/socket.c   | 24 ++++++++++++++++++++++--
+ src/udp.c      |  2 ++
+ 5 files changed, 66 insertions(+), 18 deletions(-)
+
+diff --git a/src/ip6_icmp.c b/src/ip6_icmp.c
+index 21224bc..6c9f2a2 100644
+--- a/src/ip6_icmp.c
++++ b/src/ip6_icmp.c
+@@ -286,6 +286,7 @@ static void ndp_send_ra(Slirp *slirp)
+     struct ip6 *rip = mtod(t, struct ip6 *);
+     size_t pl_size = 0;
+     struct in6_addr addr;
++    in_port_t port;
+     uint32_t scope_id;
+ 
+     rip->ip_src = (struct in6_addr)LINKLOCAL_ADDR;
+@@ -334,7 +335,7 @@ static void ndp_send_ra(Slirp *slirp)
+     pl_size += NDPOPT_PREFIXINFO_LEN;
+ 
+     /* Prefix information (NDP option) */
+-    if (get_dns6_addr(&addr, &scope_id) >= 0) {
++    if (get_dns6_addr(&addr, &port, &scope_id) >= 0) {
+         /* Host system does have an IPv6 DNS server, announce our proxy.  */
+         struct ndpopt *opt3 = mtod(t, struct ndpopt *);
+         opt3->ndpopt_type = NDPOPT_RDNSS;
+diff --git a/src/slirp.c b/src/slirp.c
+index 62a018a..5f2109a 100644
+--- a/src/slirp.c
++++ b/src/slirp.c
+@@ -87,6 +87,8 @@ unsigned curtime;
+ 
+ static struct in_addr dns_addr;
+ static struct in6_addr dns6_addr;
++static in_port_t dns_port;
++static in_port_t dns6_port;
+ static uint32_t dns6_scope_id;
+ static unsigned dns_addr_time;
+ static unsigned dns6_addr_time;
+@@ -98,7 +100,7 @@ static unsigned dns6_addr_time;
+ 
+ #if defined(_WIN32)
+ 
+-int get_dns_addr(struct in_addr *pdns_addr)
++int get_dns_addr(struct in_addr *pdns_addr, in_port_t *pdns_port)
+ {
+     FIXED_INFO *FixedInfo = NULL;
+     ULONG BufLen;
+@@ -134,6 +136,7 @@ int get_dns_addr(struct in_addr *pdns_addr)
+     pIPAddr = &(FixedInfo->DnsServerList);
+     inet_aton(pIPAddr->IpAddress.String, &tmp_addr);
+     *pdns_addr = tmp_addr;
++    *pdns_port = dns_port = htons(53); // TODO: honor custom port
+     dns_addr = tmp_addr;
+     dns_addr_time = curtime;
+     if (FixedInfo) {
+@@ -230,7 +233,8 @@ failure:
+     return -1;
+ }
+ 
+-int get_dns6_addr(struct in6_addr *pdns6_addr, uint32_t *scope_id)
++int get_dns6_addr(struct in6_addr *pdns6_addr, in_port_t *pdns_port,
++                  uint32_t *scope_id)
+ {
+     if (!in6_zero(&dns6_addr) && (curtime - dns6_addr_time) < TIMEOUT_DEFAULT) {
+         *pdns6_addr = dns6_addr;
+@@ -240,6 +244,7 @@ int get_dns6_addr(struct in6_addr *pdns6_addr, uint32_t *scope_id)
+ 
+     if (get_ipv6_dns_server(pdns6_addr, scope_id) == 0) {
+         dns6_addr = *pdns6_addr;
++        *pdns_port = dns6_port = htons(53); // TODO: honor custom port
+         dns6_addr_time = curtime;
+         dns6_scope_id = *scope_id;
+         return 0;
+@@ -258,10 +263,13 @@ static void winsock_cleanup(void)
+ #include <resolv.h>
+ 
+ static int get_dns_addr_cached(void *pdns_addr, void *cached_addr,
+-                               socklen_t addrlen, unsigned *cached_time)
++                               socklen_t addrlen,
++                               in_port_t *pdns_port, in_port_t cached_port,
++                               unsigned *cached_time)
+ {
+     if (curtime - *cached_time < TIMEOUT_DEFAULT) {
+         memcpy(pdns_addr, cached_addr, addrlen);
++        *pdns_port = cached_port;
+         return 0;
+     }
+     return 1;
+@@ -269,6 +277,7 @@ static int get_dns_addr_cached(void *pdns_addr, void *cached_addr,
+ 
+ static int get_dns_addr_libresolv(int af, void *pdns_addr, void *cached_addr,
+                                   socklen_t addrlen,
++                                  in_port_t *pdns_port, in_port_t *cached_port,
+                                   uint32_t *scope_id, uint32_t *cached_scope_id,
+                                   unsigned *cached_time)
+ {
+@@ -277,6 +286,7 @@ static int get_dns_addr_libresolv(int af, void *pdns_addr, void *cached_addr,
+     int count;
+     int found;
+     void *addr;
++    in_port_t port;
+ 
+     // we only support IPv4 and IPv4, we assume it's one or the other
+     assert(af == AF_INET || af == AF_INET6);
+@@ -297,14 +307,17 @@ static int get_dns_addr_libresolv(int af, void *pdns_addr, void *cached_addr,
+ 
+         if (af == AF_INET) {
+             addr = &servers[i].sin.sin_addr;
++            port = servers[i].sin.sin_port;
+         } else { // af == AF_INET6
+             addr = &servers[i].sin6.sin6_addr;
++            port = servers[i].sin6.sin6_port;
+         }
+ 
+         // we use the first found entry
+         if (found == 1) {
+             memcpy(pdns_addr, addr, addrlen);
+             memcpy(cached_addr, addr, addrlen);
++            *pdns_port = *cached_port = port;
+             if (scope_id) {
+                 *scope_id = 0;
+             }
+@@ -323,7 +336,7 @@ static int get_dns_addr_libresolv(int af, void *pdns_addr, void *cached_addr,
+             if (!res) {
+                 res = "  (string conversion error)";
+             }
+-            DEBUG_MISC("  %s", res);
++            DEBUG_MISC("  %s, port %d", res, ntohs(port));
+         }
+     }
+ 
+@@ -333,26 +346,29 @@ static int get_dns_addr_libresolv(int af, void *pdns_addr, void *cached_addr,
+     return 0;
+ }
+ 
+-int get_dns_addr(struct in_addr *pdns_addr)
++int get_dns_addr(struct in_addr *pdns_addr, in_port_t *pdns_port)
+ {
+     if (dns_addr.s_addr != 0) {
+         int ret;
+         ret = get_dns_addr_cached(pdns_addr, &dns_addr, sizeof(dns_addr),
+-                                  &dns_addr_time);
++                                  pdns_port, dns_port, &dns_addr_time);
+         if (ret <= 0) {
+             return ret;
+         }
+     }
+     return get_dns_addr_libresolv(AF_INET, pdns_addr, &dns_addr,
+-                                  sizeof(dns_addr), NULL, NULL, &dns_addr_time);
++                                  sizeof(dns_addr),
++                                  pdns_port, &dns_port,
++                                  NULL, NULL, &dns_addr_time);
+ }
+ 
+-int get_dns6_addr(struct in6_addr *pdns6_addr, uint32_t *scope_id)
++int get_dns6_addr(struct in6_addr *pdns6_addr, in_port_t *pdns_port,
++                  uint32_t *scope_id)
+ {
+     if (!in6_zero(&dns6_addr)) {
+         int ret;
+         ret = get_dns_addr_cached(pdns6_addr, &dns6_addr, sizeof(dns6_addr),
+-                                  &dns6_addr_time);
++                                  pdns_port, dns6_port, &dns6_addr_time);
+         if (ret == 0) {
+             *scope_id = dns6_scope_id;
+         }
+@@ -362,6 +378,7 @@ int get_dns6_addr(struct in6_addr *pdns6_addr, uint32_t *scope_id)
+     }
+     return get_dns_addr_libresolv(AF_INET6, pdns6_addr, &dns6_addr,
+                                   sizeof(dns6_addr),
++                                  pdns_port, &dns6_port,
+                                   scope_id, &dns6_scope_id, &dns6_addr_time);
+ }
+ 
+@@ -440,6 +457,7 @@ static bool try_and_setdns_server(int af, unsigned found, unsigned if_index,
+ 
+ static int get_dns_addr_resolv_conf(int af, void *pdns_addr, void *cached_addr,
+                                     socklen_t addrlen,
++                                    in_port_t *pdns_port, in_port_t *cached_port,
+                                     uint32_t *scope_id, uint32_t *cached_scope_id,
+                                     unsigned *cached_time)
+ {
+@@ -488,10 +506,13 @@ static int get_dns_addr_resolv_conf(int af, void *pdns_addr, void *cached_addr,
+ 			cached_scope_id, cached_time);
+     }
+ 
++    if (found)
++        *pdns_port = *cached_port = htons(53); // TODO: honor custom port
++
+     return found ? 0 : -1;
+ }
+ 
+-int get_dns_addr(struct in_addr *pdns_addr)
++int get_dns_addr(struct in_addr *pdns_addr, in_port_t *pdns_port)
+ {
+     static struct stat dns_addr_stat;
+ 
+@@ -505,10 +526,12 @@ int get_dns_addr(struct in_addr *pdns_addr)
+     }
+     return get_dns_addr_resolv_conf(AF_INET, pdns_addr, &dns_addr,
+                                     sizeof(dns_addr),
++                                    pdns_port, &dns_port,
+                                     NULL, NULL, &dns_addr_time);
+ }
+ 
+-int get_dns6_addr(struct in6_addr *pdns6_addr, uint32_t *scope_id)
++int get_dns6_addr(struct in6_addr *pdns6_addr, in_port_t *pdns_port,
++                  uint32_t *scope_id)
+ {
+     static struct stat dns6_addr_stat;
+ 
+@@ -525,6 +548,7 @@ int get_dns6_addr(struct in6_addr *pdns6_addr, uint32_t *scope_id)
+     }
+     return get_dns_addr_resolv_conf(AF_INET6, pdns6_addr, &dns6_addr,
+                                     sizeof(dns6_addr),
++                                    pdns_port, &dns6_port,
+                                     scope_id, &dns6_scope_id, &dns6_addr_time);
+ }
+ 
+diff --git a/src/slirp.h b/src/slirp.h
+index b4f46c8..731ea2b 100644
+--- a/src/slirp.h
++++ b/src/slirp.h
+@@ -231,11 +231,12 @@ struct Slirp {
+  */
+ void if_start(Slirp *);
+ 
+-/* Get the address of the DNS server on the host side */
+-int get_dns_addr(struct in_addr *pdns_addr);
++/* Get the IPv4 address and port of the DNS server on the host side */
++int get_dns_addr(struct in_addr *pdns_addr, in_port_t *pdns_port);
+ 
+-/* Get the IPv6 address of the DNS server on the host side */
+-int get_dns6_addr(struct in6_addr *pdns6_addr, uint32_t *scope_id);
++/* Get the IPv6 address and port of the DNS server on the host side */
++int get_dns6_addr(struct in6_addr *pdns6_addr, in_port_t *pdns_port,
++                  uint32_t *scope_id);
+ 
+ /* ncsi.c */
+ 
+diff --git a/src/socket.c b/src/socket.c
+index 278bf27..0b14492 100644
+--- a/src/socket.c
++++ b/src/socket.c
+@@ -968,7 +968,8 @@ void sofwdrain(struct socket *so)
+ static bool sotranslate_out4(Slirp *s, struct socket *so, struct sockaddr_in *sin)
+ {
+     if (!s->disable_dns && so->so_faddr.s_addr == s->vnameserver_addr.s_addr) {
+-        return so->so_fport == htons(53) && get_dns_addr(&sin->sin_addr) >= 0;
++        return (so->so_fport == htons(53) &&
++                get_dns_addr(&sin->sin_addr, &sin->sin_port) >= 0);
+     }
+ 
+     if (so->so_faddr.s_addr == s->vhost_addr.s_addr ||
+@@ -987,7 +988,8 @@ static bool sotranslate_out6(Slirp *s, struct socket *so, struct sockaddr_in6 *s
+ {
+     if (!s->disable_dns && in6_equal(&so->so_faddr6, &s->vnameserver_addr6)) {
+         uint32_t scope_id;
+-        if (so->so_fport == htons(53) && get_dns6_addr(&sin->sin6_addr, &scope_id) >= 0) {
++        if (so->so_fport == htons(53) &&
++                get_dns6_addr(&sin->sin6_addr, &sin->sin6_port, &scope_id) >= 0) {
+             sin->sin6_scope_id = scope_id;
+             return true;
+         }
+@@ -1034,6 +1036,8 @@ void sotranslate_in(struct socket *so, struct sockaddr_storage *addr)
+     struct sockaddr_in *sin = (struct sockaddr_in *)addr;
+     struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)addr;
+ 
++    in_port_t dns_port;
++
+     switch (addr->ss_family) {
+     case AF_INET:
+         if ((so->so_faddr.s_addr & slirp->vnetwork_mask.s_addr) ==
+@@ -1047,6 +1051,13 @@ void sotranslate_in(struct socket *so, struct sockaddr_storage *addr)
+                 sin->sin_addr = so->so_faddr;
+             }
+         }
++
++        struct in_addr sin_addr;
++        if (get_dns_addr(&sin_addr, &dns_port) >= 0 &&
++                sin->sin_port == dns_port &&
++                sin->sin_addr.s_addr == sin_addr.s_addr)
++            sin->sin_port = htons(53);
++
+         break;
+ 
+     case AF_INET6:
+@@ -1057,6 +1068,15 @@ void sotranslate_in(struct socket *so, struct sockaddr_storage *addr)
+                 sin6->sin6_addr = so->so_faddr6;
+             }
+         }
++
++        struct in6_addr sin6_addr;
++        uint32_t scope_id;
++        if (get_dns6_addr(&sin6_addr, &dns_port, &scope_id) >= 0 &&
++                sin6->sin6_port == dns_port &&
++                sin6->sin6_scope_id == scope_id &&
++                in6_equal(&sin6->sin6_addr, &sin6_addr))
++            sin6->sin6_port = htons(53);
++
+         break;
+ 
+     default:
+diff --git a/src/udp.c b/src/udp.c
+index eb20bbb..14704e5 100644
+--- a/src/udp.c
++++ b/src/udp.c
+@@ -263,6 +263,8 @@ int udp_output(struct socket *so, struct mbuf *m, const struct sockaddr_in *sadd
+     DEBUG_ARG("m = %p", m);
+     DEBUG_ARG("saddr = %s", inet_ntop(AF_INET, &saddr->sin_addr, addr, sizeof(addr)));
+     DEBUG_ARG("daddr = %s", inet_ntop(AF_INET, &daddr->sin_addr, addr, sizeof(addr)));
++    DEBUG_ARG("s_inport = %d", ntohs(saddr->sin_port));
++    DEBUG_ARG("d_inport = %d", ntohs(daddr->sin_port));
+ 
+     /*
+      * Adjust for header
+-- 
+2.49.0
+
