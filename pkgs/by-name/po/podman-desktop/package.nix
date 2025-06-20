@@ -5,6 +5,7 @@
   makeWrapper,
   copyDesktopItems,
   electron_36,
+  electron-bin,
   nodejs,
   pnpm_10,
   makeDesktopItem,
@@ -151,7 +152,7 @@ stdenv.mkDerivation (finalAttrs: {
       booxter
       panda2134
     ];
-    platforms = electron.meta.platforms ++ lib.platforms.darwin;
+    platforms = lib.lists.unique (electron.meta.platforms ++ electron-bin.meta.platforms);
     mainProgram = "podman-desktop";
   };
 })
