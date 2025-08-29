@@ -1,7 +1,7 @@
 {
   lib,
   stdenv,
-  fetchurl,
+  fetchFromGitHub,
   meson,
   ninja,
   pkg-config,
@@ -14,7 +14,7 @@
   nativeContextSupport ? stdenv.hostPlatform.isLinux,
   vaapiSupport ? !stdenv.hostPlatform.isDarwin,
   libva,
-  vulkanSupport ? stdenv.hostPlatform.isLinux,
+  vulkanSupport ? true,
   vulkan-headers,
   vulkan-loader,
   gitUpdater,
@@ -24,9 +24,11 @@ stdenv.mkDerivation rec {
   pname = "virglrenderer";
   version = "1.1.1";
 
-  src = fetchurl {
-    url = "https://gitlab.freedesktop.org/virgl/virglrenderer/-/archive/${version}/virglrenderer-${version}.tar.bz2";
-    hash = "sha256-D+SJqBL76z1nGBmcJ7Dzb41RvFxU2Ak6rVOwDRB94rM=";
+  src = fetchFromGitHub {
+    owner = "booxter";
+    repo = "virglrenderer";
+    rev = "d3c1d7bbed73be4ee2b5e3e6f73d461d34580a9e";
+    sha256 = "sha256-y03z/wcqKliGkBQ60lxtQTLZ/sNG+TqlSXpe4BHoIjM=";
   };
 
   separateDebugInfo = true;
@@ -60,6 +62,7 @@ stdenv.mkDerivation rec {
     [
       (lib.mesonBool "video" vaapiSupport)
       (lib.mesonBool "venus" vulkanSupport)
+      (lib.mesonBool "render-server" false)
     ]
     ++ lib.optionals nativeContextSupport [
       (lib.mesonOption "drm-renderers" "amdgpu-experimental,msm")
