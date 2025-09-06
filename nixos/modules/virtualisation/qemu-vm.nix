@@ -205,7 +205,7 @@ let
       else
         ''
           # Retain gcroots in the host Nix store while the VM is running.
-          export NIX_GCROOTS="$(${concatStringsSep ":" ([ config.system.build.toplevel ] ++ config.virtualisation.additionalPaths)})"
+          export NIX_GCROOTS="${concatStringsSep ":" ([ config.system.build.toplevel ] ++ config.virtualisation.additionalPaths)}"
         ''
     }
 
