@@ -20,6 +20,7 @@
   texinfo,
   which,
   versionCheckHook,
+  gmpxx,
 }:
 
 stdenv.mkDerivation (finalAttrs: {
@@ -55,12 +56,19 @@ stdenv.mkDerivation (finalAttrs: {
     librep
     pango
     rep-gtk
-  ];
+  ]
+  ++ lib.optional stdenv.isDarwin gmpxx;
 
   postPatch = ''
     sed -e 's|REP_DL_LOAD_PATH=|REP_DL_LOAD_PATH=$(REP_DL_LOAD_PATH):|g' -i Makedefs.in
     sed -e 's|$(repexecdir)|$(libdir)/rep|g' -i src/Makefile.in
+  ''
+  + lib.optionalString stdenv.hostPlatform.isDarwin ''
+    sed -e 's|DOC|DOC.file|g' -i Makefile.in
+    sed -e 's|\.\./DOC|\.\./DOC.file|g' -i lisp/Makefile.in
   '';
+
+  env.NIX_CFLAGS_COMPILE = lib.optionalString stdenv.hostPlatform.isDarwin "-fgnu89-inline";
 
   strictDeps = true;
   enableParallelBuilding = true;
@@ -73,6 +81,7 @@ stdenv.mkDerivation (finalAttrs: {
              $out/bin/sawfish; do
       wrapProgram $file \
         --prefix REP_DL_LOAD_PATH : "$out/lib/rep" \
+        --prefix PATH : "${lib.getBin librep}/bin" \
         --set REP_LOAD_PATH "$out/share/sawfish/lisp"
     done
   '';
