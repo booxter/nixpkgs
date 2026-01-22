@@ -1,0 +1,17 @@
+diff --git a/security/sandbox/mac/Sandbox.mm b/security/sandbox/mac/Sandbox.mm
+index 1341f857fd1f..b571686ebc97 100644
+--- a/security/sandbox/mac/Sandbox.mm
++++ b/security/sandbox/mac/Sandbox.mm
+@@ -203,6 +203,12 @@ void MacSandboxInfo::AppendAsParams(std::vector<std::string>& aParams) const {
+ 
+ void MacSandboxInfo::AppendStartupParam(
+     std::vector<std::string>& aParams) const {
++  // Used by nixpkgs PGO builds to avoid sandbox violations in nix build envs.
++  const char* disableSandbox = getenv("NIX_DISABLE_MOZILLA_SANDBOX");
++  if (disableSandbox && disableSandbox[0] != '\0' &&
++      strcmp(disableSandbox, "0") != 0) {
++    return;
++  }
+   aParams.push_back("-sbStartup");
+ }
+ 

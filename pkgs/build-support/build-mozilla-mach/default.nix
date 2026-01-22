@@ -136,7 +136,10 @@ in
   ),
   overrideCC,
   buildPackages,
-  pgoSupport ? (stdenv.hostPlatform.isLinux && stdenv.hostPlatform == stdenv.buildPlatform),
+  pgoSupport ? (
+    (stdenv.hostPlatform.isLinux || stdenv.hostPlatform.isDarwin)
+    && stdenv.hostPlatform == stdenv.buildPlatform
+  ),
   xvfb-run,
   elfhackSupport ?
     isElfhackPlatform stdenv && !(stdenv.hostPlatform.isMusl && stdenv.hostPlatform.isAarch64),
@@ -317,6 +320,9 @@ buildStdenv.mkDerivation {
       # https://hg-edge.mozilla.org/mozilla-central/rev/aa8a29bd1fb9
       ./139-wayland-drag-animation.patch
     ]
+    ++ lib.optionals (stdenv.hostPlatform.isDarwin && pgoSupport) [
+      ./disable-sandbox-for-pgo.patch
+    ]
     # Revert apple sdk bump to 26.1 and 26.2
     ++
       lib.optionals (lib.versionAtLeast version "148" && lib.versionOlder apple-sdk_26.version "26.2")
@@ -385,7 +391,7 @@ buildStdenv.mkDerivation {
     dump_syms
     patchelf
   ]
-  ++ lib.optionals pgoSupport [ xvfb-run ]
+  ++ lib.optionals (pgoSupport && stdenv.hostPlatform.isLinux) [ xvfb-run ]
   ++ extraNativeBuildInputs;
 
   setOutputFlags = false; # `./mach configure` doesn't understand `--*dir=` flags.
@@ -597,29 +603,50 @@ buildStdenv.mkDerivation {
   ++ lib.optional jemallocSupport jemalloc
   ++ extraBuildInputs;
 
-  profilingPhase = lib.optionalString pgoSupport ''
-    # Avoid compressing the instrumented build with high levels of compression
-    export MOZ_PKG_FORMAT=tar
+  profilingPhase =
+    lib.optionalString pgoSupport ''
+      # Avoid compressing the instrumented build with high levels of compression
+      export MOZ_PKG_FORMAT=tar
 
-    # Package up Firefox for profiling
-    ./mach package
+      # Package up Firefox for profiling
+      ./mach package
 
-    # Run profiling
-    (
-      export HOME=$TMPDIR
-      export LLVM_PROFDATA=llvm-profdata
-      export JARLOG_FILE="$TMPDIR/jarlog"
-
+      # Run profiling
+      (
+        export HOME=$TMPDIR
+        export LLVM_PROFDATA=llvm-profdata
+        export JARLOG_FILE="$TMPDIR/jarlog"
+    ''
+    + lib.optionalString stdenv.hostPlatform.isDarwin ''
+      export MOZ_HEADLESS=1
+      export NIX_DISABLE_MOZILLA_SANDBOX=1
+      export GFX_DISABLE_HWCOMPOSITING=1
+      export LIBGL_ALWAYS_SOFTWARE=1
+      export MOZ_DISABLE_RDD_SANDBOX=1
+      export MOZ_WEBRENDER=0
+      export MOZ_LOG="Compositor:5,Widget:5,PlatformDecoderModule:5"
+      ./mach python ./build/pgo/profileserver.py
+      unset MOZ_LOG
+      unset MOZ_WEBRENDER
+      unset MOZ_DISABLE_RDD_SANDBOX
+      unset LIBGL_ALWAYS_SOFTWARE
+      unset GFX_DISABLE_HWCOMPOSITING
+      unset NIX_DISABLE_MOZILLA_SANDBOX
+      unset MOZ_HEADLESS
+    ''
+    + lib.optionalString (stdenv.hostPlatform.isLinux) ''
       xvfb-run -w 10 -s "-screen 0 1920x1080x24" \
         ./mach python ./build/pgo/profileserver.py
-    )
+    ''
+    + ''
+      )
 
-    # Copy profiling data to a place we can easily reference
-    cp ./merged.profdata $TMPDIR/merged.profdata
+      # Copy profiling data to a place we can easily reference
+      cp ./merged.profdata $TMPDIR/merged.profdata
 
-    # Clean build dir
-    ./mach clobber
-  '';
+      # Clean build dir
+      ./mach clobber
+    '';
 
   preBuild = ''
     cd objdir
