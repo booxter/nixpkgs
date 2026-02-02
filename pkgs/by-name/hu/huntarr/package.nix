@@ -3,6 +3,7 @@
   stdenvNoCC,
   fetchFromGitHub,
   makeWrapper,
+  nix-update-script,
   python3,
 }:
 
@@ -24,13 +25,13 @@ let
 in
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "huntarr";
-  version = "9.1.7";
+  version = "9.1.8";
 
   src = fetchFromGitHub {
     owner = "plexguide";
     repo = "Huntarr.io";
     rev = finalAttrs.version;
-    hash = "sha256-lxIITehb+CbXF+31zQEHo64oG+zTgGuLw+Ba4awv6Qc=";
+    hash = "sha256-WlfiGQSnAPXwX9o/avFNSVywyYRmM2KNYeERHf/0VoE=";
   };
 
   nativeBuildInputs = [ makeWrapper ];
@@ -50,6 +51,8 @@ stdenvNoCC.mkDerivation (finalAttrs: {
 
     runHook postInstall
   '';
+
+  passthru.updateScript = nix-update-script { };
 
   meta = {
     description = "Find missing media and quality upgrades for *arr apps";
