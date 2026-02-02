@@ -941,6 +941,7 @@
   ./services/misc/rumno.nix
   ./services/misc/safeeyes.nix
   ./services/misc/sdrplay.nix
+  ./services/misc/servarr/huntarr.nix
   ./services/misc/servarr/lidarr.nix
   ./services/misc/servarr/prowlarr.nix
   ./services/misc/servarr/radarr.nix
