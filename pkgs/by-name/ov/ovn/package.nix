@@ -20,6 +20,7 @@
   gnugrep,
   gnused,
   makeWrapper,
+  tcpdump,
 }:
 let
   withOpensslConfigureFlag = "--with-openssl=${lib.getLib openssl.dev}";
@@ -65,6 +66,8 @@ stdenv.mkDerivation (finalAttrs: {
     # Fix test failures due to spurious Broken pipe on AT_CHECK stderr.
     # Posted: https://patchwork.ozlabs.org/project/ovn/patch/20251213030322.91112-1-ihar.hrachyshka@gmail.com/
     ./0001-tests-Ignore-AT_CHECK-stderr-for-grep-.-grep-q.patch
+
+    ./command-v.patch
   ];
 
   nativeBuildInputs = [
@@ -110,6 +113,7 @@ stdenv.mkDerivation (finalAttrs: {
   nativeCheckInputs = [
     openssl # used to generate certificates used for test services
     procps
+    tcpdump
   ];
 
   postInstall = ''
