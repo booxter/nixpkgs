@@ -39,7 +39,7 @@ buildPythonPackage rec {
   postPatch = ''
     printf "${version}" > scapy/VERSION
 
-    libpcap_file="${lib.getLib libpcap}/lib/libpcap${stdenv.hostPlatform.extensions.sharedLibrary}"
+    libpcap_file="${lib.getLib libpcap}/lib/libpcap${stdenv.hostPlatform.extensions.library}"
     if ! [ -e "$libpcap_file" ]; then
         echo "error: $libpcap_file not found" >&2
         exit 1
