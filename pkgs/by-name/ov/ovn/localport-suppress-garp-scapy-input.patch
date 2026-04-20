@@ -1,0 +1,39 @@
+From c43672b6edcf90f155ac82c3b6cec678c69b41a7 Mon Sep 17 00:00:00 2001
+From: Ihar Hrachyshka <ihar.hrachyshka@gmail.com>
+Date: Mon, 20 Apr 2026 15:25:37 -0400
+Subject: [PATCH] tests: Fix localport suppress gARP scapy input
+
+send_garp() was refactored to build packets with scapy, so callers must
+pass dotted IPv4 strings for the sender and target protocol addresses.
+The localport suppress gARP test still passed ip_to_hex() output, which
+was correct for the old handcrafted packet path but invalid for the new
+helper.
+
+Commit 85f274f4a870 ("tests: Fix incorrect invocations of send_garp.")
+updated this test's interface argument, but left the stale hex IP inputs
+behind. Replace them with dotted IPv4 strings so the helper receives
+valid ARP addresses.
+
+Fixes: 0814c5b164a9 ("tests: Implement send_garp using scapy.")
+Fixes: 85f274f4a870 ("tests: Fix incorrect invocations of send_garp.")
+---
+ tests/ovn.at | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/tests/ovn.at b/tests/ovn.at
+index 0d8c223cc..c0ae611bc 100644
+--- a/tests/ovn.at
++++ b/tests/ovn.at
+@@ -14176,8 +14176,8 @@ AT_CHECK([
+     test 0 -eq $pkts
+ ])
+ 
+-spa=$(ip_to_hex 10 0 0 1)
+-tpa=$(ip_to_hex 10 0 0 100)
++spa=10.0.0.1
++tpa=10.0.0.100
+ send_garp hv1 vif1 1 "00:00:00:00:00:01" "ff:ff:ff:ff:ff:ff" $spa $tpa
+ 
+ dnl traffic from localport should not be sent to localnet
+-- 
+2.49.0

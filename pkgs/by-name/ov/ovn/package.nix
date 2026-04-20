@@ -40,6 +40,10 @@ stdenv.mkDerivation (finalAttrs: {
     fetchSubmodules = true;
   };
 
+  patches = [
+    ./localport-suppress-garp-scapy-input.patch
+  ];
+
   outputs = [
     "out"
     "lib"
