@@ -4163,6 +4163,7 @@ with pkgs;
 
   swiftPackages = recurseIntoAttrs (callPackage ./swift-packages.nix { });
   inherit (swiftPackages)
+    fetchSwiftPMDeps
     swift
     swiftpm
     sourcekit-lsp
