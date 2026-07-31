@@ -12,7 +12,7 @@ runCommand "test-swift-repl"
   }
   ''
     export LLDB_DEBUGSERVER_PATH=/Applications/Xcode.app/Contents/SharedFrameworks/LLDB.framework/Resources/debugserver
-    cat <<EOF | swift repl | grep "Saying: Hello, NixpkgsQ!"
+    cat <<EOF | swift repl | grep "Saying: Hello, Nixpkgs!"
       func say(message: String) {
         print("Saying: \(message)")
       }
