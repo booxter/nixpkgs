@@ -187,6 +187,20 @@ in
             postInstall =
               (old.postInstall or "")
               + lib.optionalString stdenv.hostPlatform.isElf ''
+                # LLDB looks for Swift resources relative to liblldb, which is in a separate
+                # output from the combined Swift toolchain. Swift.swiftmodule also imports
+                # SwiftShims from the sibling shims directory.
+                swiftShims="${lib.getDev stdlib}/lib/swift/shims"
+                swiftResourceDir="$out/lib/lldb/swift/${stdenv.hostPlatform.swift.platform}"
+                mkdir -p "$swiftResourceDir"
+                ln -s "$swiftShims" "$out/lib/lldb/swift/"
+                for resource in ${lib.getDev stdlib}/lib/swift/${stdenv.hostPlatform.swift.platform}/*; do
+                  ln -s "$resource" "$swiftResourceDir/"
+                done
+                for library in ${lib.getLib stdlib}/lib/libswift*${stdenv.hostPlatform.extensions.sharedLibrary}; do
+                  ln -s "$library" "$swiftResourceDir/"
+                done
+
                 for output in $outputs; do
                   while IFS= read -d "" f; do
                     if isELF "$f"; then
