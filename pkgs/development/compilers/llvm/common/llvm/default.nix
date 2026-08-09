@@ -222,7 +222,14 @@ stdenv.mkDerivation (
               hash = "sha256-3hkbYPUVRAtWpo5qBmc2jLZLivURMx8T0GQomvNZesc=";
               stripLen = 1;
             }
-          );
+          )
+      ++ lib.optionals (lib.versionOlder release_version "23") [
+        # As of macOS 27 (and iOS 27, etc), the Darwin version number is the same as the OS version number.
+        # This change breaks target parsing because `darwin27` is incorrectly interpreted as macOS 28.
+        # This patch is a backport of the target parsing changes in LLVM 23, which fixes the problem.
+        # Hopefully, Apple does not change the version number scheme again any time soon.
+        (getVersionFile "llvm/backport-darwin-triple-parsing.patch")
+      ];
 
     nativeBuildInputs = [
       cmake
