@@ -20,6 +20,17 @@
       path = ../18;
     }
   ];
+  "lldb/backport-ParseTrieEntries-fixes.patch" = [
+    {
+      before = "22";
+      path = ../18;
+    }
+    {
+      after = "22";
+      before = "23";
+      path = ../22;
+    }
+  ];
   "llvm/gnu-install-dirs.patch" = [
     {
       after = "23";
