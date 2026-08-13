@@ -59,11 +59,6 @@ python3Packages.buildPythonApplication (finalAttrs: {
     "fromager"
   ];
 
-  # Upstream runs pytest with `--log-level DEBUG`, which this test suite
-  # relies on for caplog assertions against INFO records.
-  # Reported: https://github.com/python-wheel-build/fromager/issues/1274
-  pytestFlags = [ "--log-level=DEBUG" ];
-
   meta = {
     description = "Wheel maker";
     homepage = "https://pypi.org/project/fromager/";
