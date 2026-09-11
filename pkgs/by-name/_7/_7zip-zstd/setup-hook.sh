@@ -8,5 +8,5 @@ _try7zip() {
 
 _tryUnpackDmg() {
   if ! [[ $curSrc =~ \.dmg$ ]]; then return 1; fi
-  7z x "$curSrc"
+  7z x -sns- "$curSrc"
 }
