@@ -24,6 +24,7 @@ stdenv.mkDerivation (finalAttrs: {
     "--enable-pcre2-32"
     # only enable jit on supported platforms which excludes Apple Silicon, see https://github.com/zherczeg/sljit/issues/51
     "--enable-jit=${if stdenv.hostPlatform.isS390x then "no" else "auto"}"
+    "--disable-symvers"
   ]
   # fix pcre jit in systemd units that set MemoryDenyWriteExecute=true like gitea
   ++ lib.optional withJitSealloc "--enable-jit-sealloc";
