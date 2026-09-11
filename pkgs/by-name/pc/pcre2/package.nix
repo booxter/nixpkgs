@@ -17,10 +17,6 @@ stdenv.mkDerivation (finalAttrs: {
     hash = "sha256-tsaP3286wxOItQqon/D8ScAMmHwW57UUZJHRIAPyyO0=";
   };
 
-  __structuredAttrs = true;
-  strictDeps = true;
-  enableParallelBuilding = true;
-
   nativeBuildInputs = [ updateAutotoolsGnuConfigScriptsHook ];
 
   configureFlags = [
