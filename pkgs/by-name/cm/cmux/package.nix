@@ -19,11 +19,6 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     hash = "sha256-+MKcMChZTFiDF482mVIh6mzeyKghDMV9gLA+6BjamXw=";
   };
 
-  # -snld prevents "ERROR: Dangerous symbolic link path was ignored"
-  # -xr'!*:com.apple.*' avoids extended attributes being extracted as files
-  # from the APFS image, which would corrupt the .app bundle.
-  unpackCmd = "7zz x -snld -xr'!*:com.apple.*' $curSrc";
-
   nativeBuildInputs = [
     _7zz
     makeBinaryWrapper
