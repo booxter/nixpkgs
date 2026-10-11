@@ -8,6 +8,7 @@
   automake,
   cairo,
   coreutils,
+  darwin,
   gawk,
   glib,
   glib-networking,
@@ -29,27 +30,49 @@
   openssl,
   p11-kit,
   pango,
+  pciutils,
   perl,
   pkg-config,
+  replaceVars,
+  runtimeShell,
   systemd,
   unixtools,
   zlib,
   withSystemd ? lib.meta.availableOn stdenv.hostPlatform systemd,
 }:
 
+let
+  runtimePath = lib.makeBinPath (
+    [
+      coreutils
+      gawk
+      unixtools.ps
+    ]
+    ++ lib.optionals stdenv.hostPlatform.isLinux [
+      iproute2
+      pciutils # lspci
+    ]
+    ++ lib.optionals stdenv.hostPlatform.isDarwin [
+      darwin.DarwinTools # sw_vers
+    ]
+    ++ lib.optionals withSystemd [
+      systemd # resolvectl, systemctl, systemd-detect-virt
+    ]
+  );
+in
 rustPlatform.buildRustPackage (finalAttrs: {
   pname = "gpclient";
-  version = "2.6.5";
+  version = "3.0.2";
 
   src = fetchFromGitHub {
     owner = "yuezk";
     repo = "GlobalProtect-openconnect";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-WCCSd20qkDtJ88ru+ufFZrNQZSKkCzYo5fZpbB7Sn7o=";
+    hash = "sha256-1V9ZhkR/7GSB/nwwISVsBfPfnUQ/yMoU9D5MDjxcRrw=";
     fetchSubmodules = true;
   };
 
-  cargoHash = "sha256-6+x5SRQHIchtkdYZAZl+b28hMCaiQHrp9i3tMsN3DhE=";
+  cargoHash = "sha256-F8YM3y7xP7GlNXBMBg4qm4a6ySjBFWtRxDN5mkWsbis=";
 
   passthru.updateScript = nix-update-script { };
 
@@ -96,23 +119,20 @@ rustPlatform.buildRustPackage (finalAttrs: {
     # Fail in sandbox because netdev tries to read SystemConfiguration
     "--skip=connect::args::tests::deprecated_profile_override_flags_do_not_affect_os_profile"
     "--skip=connect::args::tests::stdin_host_id_sets_profile_runtime_identity_seed"
-    "--skip=hip::tests::host_info_os_vendor_is_linux_for_linux_profile"
-    "--skip=hip::tests::host_info_os_vendor_is_apple_for_mac_profile"
-    "--skip=hip::tests::host_info_os_vendor_is_microsoft_for_windows_profile"
-    "--skip=hip::tests::host_info_host_id_comes_from_os_profile"
-    "--skip=hip::tests::host_info_host_id_independent_of_runtime_for_each_os"
-    "--skip=hip::tests::hip_os_version_argument_is_ignored"
-    "--skip=hip::tests::host_id_argument_sets_profile_runtime_identity"
-    "--skip=hip::tests::host_info_uses_host_id_argument_for_native_profile"
+    "--skip=connect::flow_tests::"
     "--skip=session::tests::builds_session_context_from_os_profile"
+  ];
+
+  patches = [
+    (replaceVars ./diagnostics-runtime.patch {
+      inherit runtimeShell runtimePath;
+    })
   ];
 
   postPatch = ''
     substituteInPlace crates/openconnect/src/vpn_utils.rs \
       --replace-fail /usr/local/libexec/gpclient/vpnc-script $out/libexec/gpclient/vpnc-script \
-      --replace-fail /usr/libexec/gpclient/vpnc-script $out/libexec/gpclient/vpnc-script \
-      --replace-fail /usr/local/libexec/gpclient/hipreport.sh $out/libexec/gpclient/hipreport.sh \
-      --replace-fail /usr/libexec/gpclient/hipreport.sh $out/libexec/gpclient/hipreport.sh
+      --replace-fail /usr/libexec/gpclient/vpnc-script $out/libexec/gpclient/vpnc-script
 
     substituteInPlace crates/common/src/constants.rs \
       --replace-fail /usr/bin/gpauth ${gpauth}/bin/gpauth \
@@ -126,11 +146,15 @@ rustPlatform.buildRustPackage (finalAttrs: {
 
   postInstall = ''
     cp -r packaging/files/usr/libexec $out/libexec
-
-    substituteInPlace $out/libexec/gpclient/hipreport.sh \
-      --replace-fail /usr/bin/gpclient $out/bin/gpclient \
-      --replace-fail /opt/homebrew/bin/gpclient $out/bin/gpclient \
-      --replace-fail /usr/local/bin/gpclient $out/bin/gpclient
+  ''
+  + lib.optionalString stdenv.hostPlatform.isDarwin ''
+    # Upstream links the vendored OpenConnect dylib from Cargo's build directory.
+    # Upstream fix: https://github.com/yuezk/GlobalProtect-openconnect/pull/668
+    openconnectLibrary=$(otool -L "$out/bin/gpclient" | awk '/\/libopenconnect\..*\.dylib / { print $1 }')
+    installedLibrary="$out/lib/$(basename "$openconnectLibrary")"
+    install -Dm755 "$openconnectLibrary" "$installedLibrary"
+    install_name_tool -id "$installedLibrary" "$installedLibrary"
+    install_name_tool -change "$openconnectLibrary" "$installedLibrary" "$out/bin/gpclient"
   ''
   + lib.optionalString stdenv.hostPlatform.isLinux ''
     substituteInPlace $out/libexec/gpclient/vpnc-script \
@@ -183,7 +207,10 @@ rustPlatform.buildRustPackage (finalAttrs: {
   '';
 
   postFixup = ''
+    # Collectors use GP_COMMAND_PATH instead of PATH.
     wrapProgram "$out/bin/gpclient" \
+      --prefix PATH : "${runtimePath}" \
+      --prefix GP_COMMAND_PATH : "${runtimePath}" \
       --prefix GIO_EXTRA_MODULES : ${glib-networking}/lib/gio/modules
   '';
 })
